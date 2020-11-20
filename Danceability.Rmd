@@ -1,0 +1,64 @@
+---
+title: "danceability"
+author: "Brian Krumholz"
+date: "10/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("C:/Users/Lugal/OneDrive/Documents/MSBA/TBANLT 540/Assignments/Final"))
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(mi)
+library(stringr)
+library(moments)
+```
+
+```{r}
+
+songdata <- read_csv("data.csv")
+summary(songdata)
+hist(songdata$danceability)
+```
+
+```{r}
+songdata2<- select(songdata,acousticness,danceability,duration_ms,energy,explicit,liveness,loudness,mode,speechiness,tempo,valence)
+
+
+skew <- skewness(songdata2)
+kurt <- kurtosis(songdata2)
+
+show(skew)
+
+row_names<-colnames(songdata2)
+datashape<-data.frame(row.names=row_names)
+#rownames(datashape)<-column_names
+datashape$skew <- unname(skew)
+datashape$kurt <- unname(kurt)
+
+show(datashape)
+```
+
+``` {r}
+songdata2$duration_ms.ln <- log(songdata2$duration_ms)
+songdata2$speechiness.ln <- log(songdata2$speechiness+1)
+songdata2$liveness.ln <- log(songdata2$liveness+1)
+song.fit<-lm(formula = danceability ~ acousticness+duration_ms.ln+energy+explicit+liveness.ln+loudness+mode+speechiness.ln+tempo+valence, data= songdata2)
+summary(song.fit)
+plot(song.fit)
+```
+
+```{r}
+song.residuals<-residuals(song.fit)
+#plot(song.residuals)
+ggplot(data=songdata2, aes(x=valence, y=song.residuals))+geom_point()+geom_smooth()
+predict.model3 <- predict.lm(song.fit,songdata2)
+ggplot(data=songdata2, aes(x=valence, y=danceability))+geom_point()+geom_point(aes(y=predict.model3),shape=1,color='red')+ggtitle(label="Actual Vs Predicted")
+ggplot(data=songdata2, aes(x=acousticness, y=danceability))+geom_point()+geom_point(aes(y=predict.model3),shape=1,color='red')+ggtitle(label="Actual Vs Predicted")
+ggplot(data=songdata2, aes(x=tempo, y=danceability))+geom_point()+geom_point(aes(y=predict.model3),shape=1,color='blue')+ggtitle(label="Actual Vs Predicted")
+```
+
